@@ -2,6 +2,7 @@ package com.sarthak.portfolio.controller;
 
 import com.sarthak.portfolio.model.ContactMessage;
 import com.sarthak.portfolio.repository.ContactMessageRepository;
+import com.sarthak.portfolio.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,9 @@ public class ContactController {
 
     @Autowired
     private ContactMessageRepository contactMessageRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     // POST /api/contact - Submit new message
     @PostMapping
@@ -40,6 +44,13 @@ public class ContactController {
 
         message.setTimestamp(LocalDateTime.now());
         ContactMessage saved = contactMessageRepository.save(message);
+
+        // Trigger asynchronous email and SMS notifications
+        try {
+            notificationService.sendAlerts(saved);
+        } catch (Exception e) {
+            System.err.println("Notification trigger failed: " + e.getMessage());
+        }
 
         response.put("success", true);
         response.put("message", "Message sent successfully!");
